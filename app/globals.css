@@ -1,0 +1,92 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-bg: #0D1117;
+  --color-bg-card: #161B22;
+  --color-bg-hover: #1C2330;
+  --color-border: #21262D;
+  --color-border-light: #30363D;
+  --color-text: #C9D1D9;
+  --color-text-muted: #8B949E;
+  --color-text-bright: #F0F6FC;
+  --color-buy: #26A69A;
+  --color-sell: #EF5350;
+  --color-info: #4FC3F7;
+  --color-warn: #FFB74D;
+  --color-accent: #26A69A;
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: #0D1117;
+  color: #C9D1D9;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #0D1117; }
+::-webkit-scrollbar-thumb { background: #30363D; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #484F58; }
+
+@layer components {
+  .card {
+    background: #161B22;
+    border: 1px solid #21262D;
+    border-radius: 12px;
+  }
+  .input-field {
+    width: 100%;
+    background: #0D1117;
+    border: 1px solid #30363D;
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: #C9D1D9;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .input-field:focus {
+    border-color: #26A69A;
+  }
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: #26A69A;
+    color: #0D1117;
+    font-weight: 600;
+    border-radius: 8px;
+    padding: 10px 20px;
+    transition: all 0.2s;
+  }
+  .btn-primary:hover {
+    background: #2DB5A8;
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .badge-buy { background: rgba(38,166,154,0.15); color: #26A69A; }
+  .badge-sell { background: rgba(239,83,80,0.15); color: #EF5350; }
+  .badge-neutral { background: rgba(139,148,158,0.15); color: #8B949E; }
+  .badge-warn { background: rgba(255,183,77,0.15); color: #FFB74D; }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-in { animation: fade-in 0.4s ease-out; }
