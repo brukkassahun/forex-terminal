@@ -1,10 +1,11 @@
 "use client";
+"use client";
 
 import { useState, useEffect, useCallback } from "react";
 import {
   TrendingUp, TrendingDown, Activity, Newspaper, CalendarDays,
-  Signal as SignalIcon, RefreshCw, LogOut, ChevronRight, Clock,
-  DollarSign, BarChart3, Zap, AlertTriangle, CheckCircle2,
+  Signal as SignalIcon, RefreshCw, ChevronRight, Clock,
+  DollarSign, BarChart3, Zap, AlertTriangle,
 } from "lucide-react";
 
 // ─── Types ───
@@ -15,25 +16,14 @@ interface SignalData {
   indicators: { rsi: number; sma20: number; sma50: number; macd: number; macdSignal: number; macdHistogram: number; };
   levels: { support: number; resistance: number; };
   reasons: string[]; analysis: string; trend: string;
-  lastUpdate: string;
-  dataPoints: number;
+  lastUpdate: string; dataPoints: number;
 }
 interface NewsItem { title: string; summary: string; url: string; source: string; publishedAt: string; relatedPairs?: string[]; }
 interface CalendarEvent { country: string; event: string; impact: string; date: string; time: string; forecast: string; previous: string; }
 
 const PAIRS = ["EUR/USD", "GBP/USD", "USD/JPY", "AUD/USD", "USD/CAD", "USD/CHF", "NZD/USD"];
 
-const MOTIVATIONS = [
-  "Discipline over emotion. Rules over feelings.",
-  "Cut losses fast. Let winners run.",
-  "The trend is your friend. Trade with it, not against it.",
-  "Risk 1%. Always. No exceptions.",
-  "Patience pays. Wait for A+ setups.",
-  "Capital preservation is rule #1.",
-];
-
 export default function Dashboard() {
-  const [authed, setAuthed] = useState(false);
   const [selectedPair, setSelectedPair] = useState("EUR/USD");
   const [rates, setRates] = useState<RateItem[]>([]);
   const [signal, setSignal] = useState<SignalData | null>(null);
@@ -41,18 +31,8 @@ export default function Dashboard() {
   const [calendar, setCalendar] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState({ rates: true, signal: true, news: true, calendar: true });
   const [error, setError] = useState({ rates: "", signal: "", news: "", calendar: "" });
-  const [motivation, setMotivation] = useState(MOTIVATIONS[0]);
 
-  // Auth check
-  useEffect(() => {
-    setMotivation(MOTIVATIONS[Math.floor(Math.random() * MOTIVATIONS.length)]);
-    const auth = sessionStorage.getItem("forex_authed");
-    if (!auth) {
-      window.location.href = "/";
-      return;
-    }
-    setAuthed(true);
-  }, []);
+  // Auth check removed — handled by dashboard layout
 
   // Fetch rates
   const fetchRates = useCallback(async () => {
@@ -119,58 +99,33 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    if (!authed) return;
     fetchRates();
     fetchNews();
     fetchCalendar();
-  }, [authed, fetchRates, fetchNews, fetchCalendar]);
+  }, [fetchRates, fetchNews, fetchCalendar]);
 
   useEffect(() => {
-    if (!authed) return;
     fetchSignal(selectedPair);
-  }, [authed, selectedPair, fetchSignal]);
+  }, [selectedPair, fetchSignal]);
 
   // Auto-refresh rates every 2 min
   useEffect(() => {
-    if (!authed) return;
     const interval = setInterval(() => fetchRates(), 120000);
     return () => clearInterval(interval);
-  }, [authed, fetchRates]);
-
-  if (!authed) {
-    return <div className="min-h-screen flex items-center justify-center text-text-muted">Loading...</div>;
-  }
+  }, [fetchRates]);
 
   const refreshAll = () => { fetchRates(); fetchSignal(selectedPair); fetchNews(); fetchCalendar(); };
-  const logout = () => { sessionStorage.removeItem("forex_authed"); window.location.href = "/"; };
 
   return (
-    <div className="min-h-screen bg-bg text-text">
+    <div className="space-y-4">
       {/* ─── Top Bar ─── */}
-      <header className="sticky top-0 z-50 border-b border-border bg-bg-card/95 backdrop-blur-sm">
-        <div className="mx-auto max-w-[1600px] px-4 py-3 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <div className="h-2 w-2 rounded-full bg-buy pulse-dot" />
-              <span className="font-bold text-text-bright text-sm sm:text-base">Forex Terminal</span>
-            </div>
-            <span className="hidden sm:inline text-xs text-text-muted">·</span>
-            <span className="hidden sm:inline text-xs text-text-muted">{motivation}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <button onClick={refreshAll} className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-text-muted hover:border-border-light hover:text-text transition">
-              <RefreshCw className={`h-3.5 w-3.5 ${loading.rates || loading.signal ? "animate-spin" : ""}`} />
-              <span className="hidden sm:inline">Refresh</span>
-            </button>
-            <button onClick={logout} className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-text-muted hover:border-sell/50 hover:text-sell transition">
-              <LogOut className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Exit</span>
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-[1600px] px-4 py-4 space-y-4">
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="text-lg font-bold text-text-bright">Market Overview</h1>
+        <button onClick={refreshAll} className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-text-muted hover:border-border-light hover:text-text transition">
+          <RefreshCw className={`h-3.5 w-3.5 ${loading.rates || loading.signal ? "animate-spin" : ""}`} />
+          <span className="hidden sm:inline">Refresh</span>
+        </button>
+      </div>
         {/* ─── Live Rates Ticker ─── */}
         <div className="card p-3 overflow-hidden">
           <div className="flex items-center gap-2 mb-2">
@@ -523,7 +478,6 @@ export default function Dashboard() {
             </p>
           </div>
         </div>
-      </main>
     </div>
   );
 }
