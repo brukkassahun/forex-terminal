@@ -33,17 +33,20 @@ export async function GET() {
       yesterdayRates = yesterdayData.rates ?? {};
     }
 
-    const rates: Record<string, { rate: number; change: number; changePct: number }> = {};
+    // Return rates as an ARRAY of { pair, rate, change, changePct } objects.
+    // The dashboard calls .map() on this — it must be an array, not an object.
+    const rates: { pair: string; rate: number; change: number; changePct: number }[] = [];
     for (const quote of QUOTE_CURRENCIES) {
       const rate = todayData.rates[quote];
       if (rate === undefined) continue;
       const previousRate = yesterdayRates[quote] ?? rate;
       const change = rate - previousRate;
-      rates[`EUR/${quote}`] = {
+      rates.push({
+        pair: `EUR/${quote}`,
         rate: Number(rate.toFixed(5)),
         change: Number(change.toFixed(5)),
         changePct: Number(((change / previousRate) * 100).toFixed(2)),
-      };
+      });
     }
 
     return NextResponse.json(

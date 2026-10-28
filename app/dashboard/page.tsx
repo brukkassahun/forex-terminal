@@ -60,11 +60,11 @@ export default function Dashboard() {
     try {
       const res = await fetch("/api/forex/rates");
       const data = await res.json();
-      if (data.rates) {
+      if (data.rates && Array.isArray(data.rates)) {
         setRates(data.rates);
         setError(p => ({ ...p, rates: "" }));
       } else {
-        setError(p => ({ ...p, rates: data.error || "Failed" }));
+        setError(p => ({ ...p, rates: data.error || "Failed to load rates" }));
       }
     } catch { setError(p => ({ ...p, rates: "Network error" })); }
     setLoading(p => ({ ...p, rates: false }));
@@ -92,11 +92,11 @@ export default function Dashboard() {
     try {
       const res = await fetch("/api/forex/news");
       const data = await res.json();
-      if (data.news) {
+      if (data.news && Array.isArray(data.news)) {
         setNews(data.news);
         setError(p => ({ ...p, news: "" }));
       } else {
-        setError(p => ({ ...p, news: data.error || "Failed" }));
+        setError(p => ({ ...p, news: data.error || "Failed to load news" }));
       }
     } catch { setError(p => ({ ...p, news: "Network error" })); }
     setLoading(p => ({ ...p, news: false }));
@@ -108,11 +108,11 @@ export default function Dashboard() {
     try {
       const res = await fetch("/api/forex/calendar");
       const data = await res.json();
-      if (data.events) {
+      if (data.events && Array.isArray(data.events)) {
         setCalendar(data.events);
         setError(p => ({ ...p, calendar: "" }));
       } else {
-        setError(p => ({ ...p, calendar: data.error || "Failed" }));
+        setError(p => ({ ...p, calendar: data.error || "Failed to load calendar" }));
       }
     } catch { setError(p => ({ ...p, calendar: "Network error" })); }
     setLoading(p => ({ ...p, calendar: false }));
@@ -278,7 +278,7 @@ export default function Dashboard() {
 
                   {/* Reasons */}
                   <div className="space-y-1.5">
-                    {signal.reasons.map((reason, i) => (
+                    {Array.isArray(signal.reasons) && signal.reasons.map((reason, i) => (
                       <div key={i} className="flex items-start gap-2 text-xs text-text-muted">
                         <ChevronRight className="h-3.5 w-3.5 text-info flex-shrink-0 mt-0.5" />
                         <span>{reason}</span>
