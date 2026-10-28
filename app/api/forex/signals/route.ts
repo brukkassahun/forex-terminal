@@ -96,7 +96,7 @@ export async function GET(request: NextRequest) {
     const endStr = end.toISOString().split('T')[0];
 
     const url = `https://api.frankfurter.app/${startStr}..${endStr}?from=${base}&to=${quote}`;
-    const res = await fetch(url, { next: { revalidate: 3600 } });
+    const res = await fetch(url);
 
     if (!res.ok) throw new Error(`Frankfurter API error: ${res.status}`);
 
