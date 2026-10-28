@@ -1,11 +1,11 @@
 "use client";
-"use client";
 
 import { useState, useEffect, useCallback } from "react";
 import {
   TrendingUp, TrendingDown, Activity, Newspaper, CalendarDays,
   Signal as SignalIcon, RefreshCw, ChevronRight, Clock,
-  DollarSign, BarChart3, Zap, AlertTriangle,
+  DollarSign, BarChart3, Zap, AlertTriangle, Layers, Gauge,
+  BarChart2, Target, Flame,
 } from "lucide-react";
 
 // ─── Types ───
@@ -13,8 +13,28 @@ interface RateItem { pair: string; rate: number; change: number; changePct: numb
 interface SignalData {
   pair: string; signal: "BUY" | "SELL" | "NEUTRAL"; confidence: number;
   currentPrice: number;
-  indicators: { rsi: number; sma20: number; sma50: number; macd: number; macdSignal: number; macdHistogram: number; };
-  levels: { support: number; resistance: number; };
+  indicators: {
+    rsi: number; sma20: number; sma50: number; ema20: number; ema50: number; wma20: number;
+    macd: number; macdSignal: number; macdHistogram: number;
+    stochasticK: number; stochasticD: number; williamsR: number;
+    cci: number; mfi: number; atr: number; adx: number; roc: number;
+  };
+  bollingerBands: { upper: number; middle: number; lower: number; bandwidth: number; percentB: number; };
+  volume: {
+    volumeRatio: number; activityIndex: number; upDays: number; downDays: number;
+    avgDailyRange: number; lastDayRange: number; interpretation: string;
+  };
+  obv: { value: number; trend: string };
+  levels: { support: number; resistance: number; periodHigh: number; periodLow: number; };
+  pivotPoints: { pivot: number; r1: number; r2: number; r3: number; s1: number; s2: number; s3: number; };
+  fibonacci: {
+    swingHigh: number; swingLow: number; level236: number; level382: number;
+    level500: number; level618: number; level786: number;
+  };
+  sentiment: {
+    score: number; label: string;
+    breakdown: { factor: string; value: string; bias: "bullish" | "bearish" | "neutral" }[];
+  };
   reasons: string[]; analysis: string; trend: string;
   lastUpdate: string; dataPoints: number;
 }
@@ -262,67 +282,343 @@ export default function Dashboard() {
                 <div className="flex items-center gap-2 mb-4">
                   <BarChart3 className="h-5 w-5 text-info" />
                   <h2 className="text-sm font-bold text-text-bright">Technical Indicators</h2>
+                  <span className="text-[10px] text-text-muted ml-auto">{signal.dataPoints} data points</span>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+
+                {/* Oscillators Row */}
+                <p className="text-[10px] font-semibold text-text-muted uppercase tracking-wider mb-2">Oscillators</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 mb-4">
                   {/* RSI */}
-                  <div className="rounded-lg border border-border bg-bg/50 p-3">
+                  <div className="rounded-lg border border-border bg-bg/50 p-2.5">
                     <p className="text-[10px] font-semibold text-text-muted uppercase">RSI (14)</p>
-                    <p className={`text-xl font-mono font-bold mt-1 ${
-                      signal.indicators.rsi > 70 ? "text-sell" :
-                      signal.indicators.rsi < 30 ? "text-buy" : "text-text-bright"
-                    }`}>{signal.indicators.rsi}</p>
-                    <p className="text-[10px] text-text-muted mt-0.5">
-                      {signal.indicators.rsi > 70 ? "Overbought" : signal.indicators.rsi < 30 ? "Oversold" : "Neutral"}
-                    </p>
+                    <p className={`text-lg font-mono font-bold mt-0.5 ${signal.indicators.rsi > 70 ? "text-sell" : signal.indicators.rsi < 30 ? "text-buy" : "text-text-bright"}`}>{signal.indicators.rsi}</p>
+                    <p className="text-[9px] text-text-muted">{signal.indicators.rsi > 70 ? "Overbought" : signal.indicators.rsi < 30 ? "Oversold" : "Neutral"}</p>
                   </div>
-                  {/* SMA 20 */}
-                  <div className="rounded-lg border border-border bg-bg/50 p-3">
-                    <p className="text-[10px] font-semibold text-text-muted uppercase">SMA 20</p>
-                    <p className="text-xl font-mono font-bold text-text-bright mt-1">{signal.indicators.sma20.toFixed(4)}</p>
-                    <p className="text-[10px] mt-0.5">
-                      <span className={signal.currentPrice > signal.indicators.sma20 ? "text-buy" : "text-sell"}>
-                        {signal.currentPrice > signal.indicators.sma20 ? "Above" : "Below"}
-                      </span>
-                    </p>
+                  {/* Stochastic */}
+                  <div className="rounded-lg border border-border bg-bg/50 p-2.5">
+                    <p className="text-[10px] font-semibold text-text-muted uppercase">Stochastic %K</p>
+                    <p className={`text-lg font-mono font-bold mt-0.5 ${signal.indicators.stochasticK > 80 ? "text-sell" : signal.indicators.stochasticK < 20 ? "text-buy" : "text-text-bright"}`}>{signal.indicators.stochasticK}</p>
+                    <p className="text-[9px] text-text-muted">D: {signal.indicators.stochasticD}</p>
                   </div>
-                  {/* SMA 50 */}
-                  <div className="rounded-lg border border-border bg-bg/50 p-3">
-                    <p className="text-[10px] font-semibold text-text-muted uppercase">SMA 50</p>
-                    <p className="text-xl font-mono font-bold text-text-bright mt-1">{signal.indicators.sma50.toFixed(4)}</p>
-                    <p className="text-[10px] mt-0.5">
-                      <span className={signal.currentPrice > signal.indicators.sma50 ? "text-buy" : "text-sell"}>
-                        {signal.currentPrice > signal.indicators.sma50 ? "Above" : "Below"}
-                      </span>
-                    </p>
+                  {/* Williams %R */}
+                  <div className="rounded-lg border border-border bg-bg/50 p-2.5">
+                    <p className="text-[10px] font-semibold text-text-muted uppercase">Williams %R</p>
+                    <p className={`text-lg font-mono font-bold mt-0.5 ${signal.indicators.williamsR < -80 ? "text-buy" : signal.indicators.williamsR > -20 ? "text-sell" : "text-text-bright"}`}>{signal.indicators.williamsR}</p>
+                    <p className="text-[9px] text-text-muted">{signal.indicators.williamsR < -80 ? "Oversold" : signal.indicators.williamsR > -20 ? "Overbought" : "Neutral"}</p>
                   </div>
-                  {/* MACD */}
-                  <div className="rounded-lg border border-border bg-bg/50 p-3">
-                    <p className="text-[10px] font-semibold text-text-muted uppercase">MACD</p>
-                    <p className="text-xl font-mono font-bold text-text-bright mt-1">{signal.indicators.macd.toFixed(5)}</p>
-                    <p className="text-[10px] text-text-muted mt-0.5">Signal: {signal.indicators.macdSignal.toFixed(5)}</p>
+                  {/* CCI */}
+                  <div className="rounded-lg border border-border bg-bg/50 p-2.5">
+                    <p className="text-[10px] font-semibold text-text-muted uppercase">CCI (20)</p>
+                    <p className={`text-lg font-mono font-bold mt-0.5 ${signal.indicators.cci < -100 ? "text-buy" : signal.indicators.cci > 100 ? "text-sell" : "text-text-bright"}`}>{signal.indicators.cci}</p>
+                    <p className="text-[9px] text-text-muted">{signal.indicators.cci < -100 ? "Oversold" : signal.indicators.cci > 100 ? "Overbought" : "Neutral"}</p>
                   </div>
-                  {/* MACD Histogram */}
-                  <div className="rounded-lg border border-border bg-bg/50 p-3">
+                  {/* MFI */}
+                  <div className="rounded-lg border border-border bg-bg/50 p-2.5">
+                    <p className="text-[10px] font-semibold text-text-muted uppercase">MFI (14)</p>
+                    <p className={`text-lg font-mono font-bold mt-0.5 ${signal.indicators.mfi < 20 ? "text-buy" : signal.indicators.mfi > 80 ? "text-sell" : "text-text-bright"}`}>{signal.indicators.mfi}</p>
+                    <p className="text-[9px] text-text-muted">{signal.indicators.mfi < 20 ? "Oversold" : signal.indicators.mfi > 80 ? "Overbought" : "Neutral"}</p>
+                  </div>
+                  {/* MACD Hist */}
+                  <div className="rounded-lg border border-border bg-bg/50 p-2.5">
                     <p className="text-[10px] font-semibold text-text-muted uppercase">MACD Hist</p>
-                    <p className={`text-xl font-mono font-bold mt-1 ${
-                      signal.indicators.macdHistogram > 0 ? "text-buy" : "text-sell"
-                    }`}>{signal.indicators.macdHistogram > 0 ? "+" : ""}{signal.indicators.macdHistogram.toFixed(5)}</p>
-                    <p className="text-[10px] text-text-muted mt-0.5">
-                      {signal.indicators.macdHistogram > 0 ? "Bullish" : "Bearish"}
+                    <p className={`text-lg font-mono font-bold mt-0.5 ${signal.indicators.macdHistogram > 0 ? "text-buy" : "text-sell"}`}>{signal.indicators.macdHistogram > 0 ? "+" : ""}{signal.indicators.macdHistogram.toFixed(5)}</p>
+                    <p className="text-[9px] text-text-muted">{signal.indicators.macdHistogram > 0 ? "Bullish" : "Bearish"}</p>
+                  </div>
+                  {/* ROC */}
+                  <div className="rounded-lg border border-border bg-bg/50 p-2.5">
+                    <p className="text-[10px] font-semibold text-text-muted uppercase">ROC (12)</p>
+                    <p className={`text-lg font-mono font-bold mt-0.5 ${signal.indicators.roc > 0 ? "text-buy" : "text-sell"}`}>{signal.indicators.roc > 0 ? "+" : ""}{signal.indicators.roc}%</p>
+                    <p className="text-[9px] text-text-muted">Momentum</p>
+                  </div>
+                  {/* ADX */}
+                  <div className="rounded-lg border border-border bg-bg/50 p-2.5">
+                    <p className="text-[10px] font-semibold text-text-muted uppercase">ADX (14)</p>
+                    <p className={`text-lg font-mono font-bold mt-0.5 ${signal.indicators.adx > 50 ? "text-warn" : signal.indicators.adx > 25 ? "text-info" : "text-text-muted"}`}>{signal.indicators.adx}</p>
+                    <p className="text-[9px] text-text-muted">{signal.indicators.adx > 50 ? "Very strong" : signal.indicators.adx > 25 ? "Trending" : "Weak/Range"}</p>
+                  </div>
+                </div>
+
+                {/* Moving Averages Row */}
+                <p className="text-[10px] font-semibold text-text-muted uppercase tracking-wider mb-2">Moving Averages</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 mb-4">
+                  {[
+                    { label: "SMA 20", value: signal.indicators.sma20 },
+                    { label: "SMA 50", value: signal.indicators.sma50 },
+                    { label: "EMA 20", value: signal.indicators.ema20 },
+                    { label: "EMA 50", value: signal.indicators.ema50 },
+                    { label: "WMA 20", value: signal.indicators.wma20 },
+                    { label: "MACD", value: signal.indicators.macd },
+                    { label: "MACD Signal", value: signal.indicators.macdSignal },
+                    { label: "ATR (14)", value: signal.indicators.atr },
+                  ].map((item) => (
+                    <div key={item.label} className="rounded-lg border border-border bg-bg/50 p-2.5">
+                      <p className="text-[10px] font-semibold text-text-muted uppercase">{item.label}</p>
+                      <p className="text-sm font-mono font-bold text-text-bright mt-0.5">{item.value.toFixed(5)}</p>
+                      <p className="text-[9px] mt-0.5">
+                        <span className={signal.currentPrice > item.value ? "text-buy" : "text-sell"}>
+                          {signal.currentPrice > item.value ? "↑ Above" : "↓ Below"}
+                        </span>
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* SMA Cross */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="rounded-lg border border-border bg-bg/50 p-2.5">
+                    <p className="text-[10px] font-semibold text-text-muted uppercase">SMA Cross (20/50)</p>
+                    <p className={`text-sm font-bold mt-0.5 ${signal.indicators.sma20 > signal.indicators.sma50 ? "text-buy" : "text-sell"}`}>
+                      {signal.indicators.sma20 > signal.indicators.sma50 ? "Golden Cross ↑" : "Death Cross ↓"}
                     </p>
                   </div>
-                  {/* SMA Cross */}
-                  <div className="rounded-lg border border-border bg-bg/50 p-3">
-                    <p className="text-[10px] font-semibold text-text-muted uppercase">SMA Cross</p>
-                    <p className={`text-sm font-bold mt-1 ${
-                      signal.indicators.sma20 > signal.indicators.sma50 ? "text-buy" : "text-sell"
-                    }`}>
-                      {signal.indicators.sma20 > signal.indicators.sma50 ? "Golden Cross" : "Death Cross"}
-                    </p>
-                    <p className="text-[10px] text-text-muted mt-0.5">
-                      {signal.indicators.sma20 > signal.indicators.sma50 ? "Bullish alignment" : "Bearish alignment"}
+                  <div className="rounded-lg border border-border bg-bg/50 p-2.5">
+                    <p className="text-[10px] font-semibold text-text-muted uppercase">ATR Volatility</p>
+                    <p className="text-sm font-bold text-text-bright mt-0.5">
+                      {signal.indicators.atr > signal.currentPrice * 0.01 ? "High volatility" : "Low volatility"}
                     </p>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* ─── Volume & Activity Analysis ─── */}
+            {signal && !loading.signal && signal.volume && (
+              <div className="card p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <BarChart2 className="h-5 w-5 text-info" />
+                  <h2 className="text-sm font-bold text-text-bright">Volume & Activity Analysis</h2>
+                  <span className={`badge ${signal.volume.interpretation === "high" ? "badge-buy" : signal.volume.interpretation === "low" ? "badge-sell" : "badge-neutral"}`}>
+                    {signal.volume.interpretation} activity
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 mb-3">
+                  <div className="rounded-lg border border-border bg-bg/50 p-2.5">
+                    <p className="text-[10px] font-semibold text-text-muted uppercase">Volume Ratio</p>
+                    <p className={`text-lg font-mono font-bold mt-0.5 ${signal.volume.volumeRatio > 1.5 ? "text-buy" : signal.volume.volumeRatio < 0.5 ? "text-sell" : "text-text-bright"}`}>{signal.volume.volumeRatio}x</p>
+                    <p className="text-[9px] text-text-muted">vs avg</p>
+                  </div>
+                  <div className="rounded-lg border border-border bg-bg/50 p-2.5">
+                    <p className="text-[10px] font-semibold text-text-muted uppercase">Activity Index</p>
+                    <p className="text-lg font-mono font-bold text-text-bright mt-0.5">{signal.volume.activityIndex}/100</p>
+                    <p className="text-[9px] text-text-muted">price-action based</p>
+                  </div>
+                  <div className="rounded-lg border border-border bg-bg/50 p-2.5">
+                    <p className="text-[10px] font-semibold text-text-muted uppercase">Up Days (20)</p>
+                    <p className="text-lg font-mono font-bold text-buy mt-0.5">{signal.volume.upDays}</p>
+                    <p className="text-[9px] text-text-muted">bullish sessions</p>
+                  </div>
+                  <div className="rounded-lg border border-border bg-bg/50 p-2.5">
+                    <p className="text-[10px] font-semibold text-text-muted uppercase">Down Days (20)</p>
+                    <p className="text-lg font-mono font-bold text-sell mt-0.5">{signal.volume.downDays}</p>
+                    <p className="text-[9px] text-text-muted">bearish sessions</p>
+                  </div>
+                  <div className="rounded-lg border border-border bg-bg/50 p-2.5">
+                    <p className="text-[10px] font-semibold text-text-muted uppercase">Avg Daily Range</p>
+                    <p className="text-sm font-mono font-bold text-text-bright mt-0.5">{signal.volume.avgDailyRange.toFixed(5)}</p>
+                    <p className="text-[9px] text-text-muted">20-day average</p>
+                  </div>
+                  <div className="rounded-lg border border-border bg-bg/50 p-2.5">
+                    <p className="text-[10px] font-semibold text-text-muted uppercase">Last Day Range</p>
+                    <p className={`text-sm font-mono font-bold mt-0.5 ${signal.volume.lastDayRange > signal.volume.avgDailyRange ? "text-buy" : "text-sell"}`}>{signal.volume.lastDayRange.toFixed(5)}</p>
+                    <p className="text-[9px] text-text-muted">{signal.volume.lastDayRange > signal.volume.avgDailyRange ? "Above avg" : "Below avg"}</p>
+                  </div>
+                  <div className="rounded-lg border border-border bg-bg/50 p-2.5">
+                    <p className="text-[10px] font-semibold text-text-muted uppercase">OBV Trend</p>
+                    <p className={`text-sm font-bold mt-0.5 ${signal.obv?.trend === "up" ? "text-buy" : signal.obv?.trend === "down" ? "text-sell" : "text-text-muted"}`}>
+                      {signal.obv?.trend === "up" ? "↑ Rising" : signal.obv?.trend === "down" ? "↓ Falling" : "→ Flat"}
+                    </p>
+                    <p className="text-[9px] text-text-muted">On-Balance Volume</p>
+                  </div>
+                  <div className="rounded-lg border border-border bg-bg/50 p-2.5">
+                    <p className="text-[10px] font-semibold text-text-muted uppercase">ATR (Volatility)</p>
+                    <p className="text-sm font-mono font-bold text-text-bright mt-0.5">{signal.indicators.atr.toFixed(5)}</p>
+                    <p className="text-[9px] text-text-muted">14-day avg range</p>
+                  </div>
+                </div>
+                {/* Activity Bar */}
+                <div className="mt-2">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[10px] text-text-muted">Volume Activity</span>
+                    <span className="text-[10px] font-mono text-text-bright">{signal.volume.activityIndex}%</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-bg overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${signal.volume.activityIndex > 60 ? "bg-buy" : signal.volume.activityIndex > 30 ? "bg-warn" : "bg-sell"}`}
+                      style={{ width: `${signal.volume.activityIndex}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ─── Bollinger Bands ─── */}
+            {signal && !loading.signal && signal.bollingerBands && (
+              <div className="card p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <Layers className="h-5 w-5 text-info" />
+                  <h2 className="text-sm font-bold text-text-bright">Bollinger Bands</h2>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
+                  <div className="rounded-lg border border-sell/20 bg-sell/5 p-2.5">
+                    <p className="text-[10px] font-semibold text-text-muted uppercase">Upper Band</p>
+                    <p className="text-sm font-mono font-bold text-sell mt-0.5">{signal.bollingerBands.upper.toFixed(5)}</p>
+                  </div>
+                  <div className="rounded-lg border border-border bg-bg/50 p-2.5">
+                    <p className="text-[10px] font-semibold text-text-muted uppercase">Middle (SMA20)</p>
+                    <p className="text-sm font-mono font-bold text-text-bright mt-0.5">{signal.bollingerBands.middle.toFixed(5)}</p>
+                  </div>
+                  <div className="rounded-lg border border-buy/20 bg-buy/5 p-2.5">
+                    <p className="text-[10px] font-semibold text-text-muted uppercase">Lower Band</p>
+                    <p className="text-sm font-mono font-bold text-buy mt-0.5">{signal.bollingerBands.lower.toFixed(5)}</p>
+                  </div>
+                  <div className="rounded-lg border border-border bg-bg/50 p-2.5">
+                    <p className="text-[10px] font-semibold text-text-muted uppercase">Bandwidth</p>
+                    <p className="text-sm font-mono font-bold text-text-bright mt-0.5">{signal.bollingerBands.bandwidth}%</p>
+                  </div>
+                  <div className="rounded-lg border border-border bg-bg/50 p-2.5">
+                    <p className="text-[10px] font-semibold text-text-muted uppercase">%B Position</p>
+                    <p className={`text-sm font-mono font-bold mt-0.5 ${signal.bollingerBands.percentB > 100 ? "text-sell" : signal.bollingerBands.percentB < 0 ? "text-buy" : "text-text-bright"}`}>{signal.bollingerBands.percentB}%</p>
+                  </div>
+                  <div className="rounded-lg border border-border bg-bg/50 p-2.5">
+                    <p className="text-[10px] font-semibold text-text-muted uppercase">Position</p>
+                    <p className={`text-sm font-bold mt-0.5 ${signal.bollingerBands.percentB > 100 ? "text-sell" : signal.bollingerBands.percentB < 0 ? "text-buy" : "text-text-muted"}`}>
+                      {signal.bollingerBands.percentB > 100 ? "Above upper" : signal.bollingerBands.percentB < 0 ? "Below lower" : "Inside bands"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ─── Pivot Points & Fibonacci ─── */}
+            {signal && !loading.signal && signal.pivotPoints && signal.fibonacci && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Pivot Points */}
+                <div className="card p-5">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Target className="h-4 w-4 text-info" />
+                    <h2 className="text-sm font-bold text-text-bright">Pivot Points</h2>
+                  </div>
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between text-xs py-1 border-b border-border/50">
+                      <span className="text-sell font-semibold">R3</span>
+                      <span className="font-mono text-text-bright">{signal.pivotPoints.r3.toFixed(5)}</span>
+                    </div>
+                    <div className="flex justify-between text-xs py-1 border-b border-border/50">
+                      <span className="text-sell/80 font-semibold">R2</span>
+                      <span className="font-mono text-text-bright">{signal.pivotPoints.r2.toFixed(5)}</span>
+                    </div>
+                    <div className="flex justify-between text-xs py-1 border-b border-border/50">
+                      <span className="text-sell/60 font-semibold">R1</span>
+                      <span className="font-mono text-text-bright">{signal.pivotPoints.r1.toFixed(5)}</span>
+                    </div>
+                    <div className="flex justify-between text-xs py-1.5 bg-info/5 -mx-2 px-2 rounded">
+                      <span className="text-info font-bold">Pivot</span>
+                      <span className="font-mono font-bold text-info">{signal.pivotPoints.pivot.toFixed(5)}</span>
+                    </div>
+                    <div className="flex justify-between text-xs py-1 border-b border-border/50">
+                      <span className="text-buy/60 font-semibold">S1</span>
+                      <span className="font-mono text-text-bright">{signal.pivotPoints.s1.toFixed(5)}</span>
+                    </div>
+                    <div className="flex justify-between text-xs py-1 border-b border-border/50">
+                      <span className="text-buy/80 font-semibold">S2</span>
+                      <span className="font-mono text-text-bright">{signal.pivotPoints.s2.toFixed(5)}</span>
+                    </div>
+                    <div className="flex justify-between text-xs py-1">
+                      <span className="text-buy font-semibold">S3</span>
+                      <span className="font-mono text-text-bright">{signal.pivotPoints.s3.toFixed(5)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Fibonacci */}
+                <div className="card p-5">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Flame className="h-4 w-4 text-warn" />
+                    <h2 className="text-sm font-bold text-text-bright">Fibonacci Levels</h2>
+                  </div>
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between text-xs py-1 border-b border-border/50">
+                      <span className="text-text-muted font-semibold">Swing High (0%)</span>
+                      <span className="font-mono text-text-bright">{signal.fibonacci.swingHigh.toFixed(5)}</span>
+                    </div>
+                    <div className="flex justify-between text-xs py-1 border-b border-border/50">
+                      <span className="text-sell/70 font-semibold">23.6%</span>
+                      <span className="font-mono text-text-bright">{signal.fibonacci.level236.toFixed(5)}</span>
+                    </div>
+                    <div className="flex justify-between text-xs py-1 border-b border-border/50">
+                      <span className="text-warn font-semibold">38.2%</span>
+                      <span className="font-mono text-text-bright">{signal.fibonacci.level382.toFixed(5)}</span>
+                    </div>
+                    <div className="flex justify-between text-xs py-1.5 bg-warn/5 -mx-2 px-2 rounded">
+                      <span className="text-warn font-bold">50.0%</span>
+                      <span className="font-mono font-bold text-warn">{signal.fibonacci.level500.toFixed(5)}</span>
+                    </div>
+                    <div className="flex justify-between text-xs py-1 border-b border-border/50">
+                      <span className="text-buy font-semibold">61.8% (Golden)</span>
+                      <span className="font-mono text-text-bright">{signal.fibonacci.level618.toFixed(5)}</span>
+                    </div>
+                    <div className="flex justify-between text-xs py-1 border-b border-border/50">
+                      <span className="text-buy/70 font-semibold">78.6%</span>
+                      <span className="font-mono text-text-bright">{signal.fibonacci.level786.toFixed(5)}</span>
+                    </div>
+                    <div className="flex justify-between text-xs py-1">
+                      <span className="text-text-muted font-semibold">Swing Low (100%)</span>
+                      <span className="font-mono text-text-bright">{signal.fibonacci.swingLow.toFixed(5)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ─── Market Sentiment ─── */}
+            {signal && !loading.signal && signal.sentiment && (
+              <div className="card p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <Gauge className="h-5 w-5 text-info" />
+                  <h2 className="text-sm font-bold text-text-bright">Market Sentiment</h2>
+                </div>
+                {/* Sentiment Score Bar */}
+                <div className="mb-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs text-text-muted">Overall Sentiment Score</span>
+                    <span className={`text-lg font-black ${signal.sentiment.score >= 55 ? "text-buy" : signal.sentiment.score <= 45 ? "text-sell" : "text-text-muted"}`}>
+                      {signal.sentiment.score}/100 · {signal.sentiment.label}
+                    </span>
+                  </div>
+                  <div className="h-3 rounded-full bg-bg overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${
+                        signal.sentiment.score >= 70 ? "bg-buy" :
+                        signal.sentiment.score >= 55 ? "bg-buy/70" :
+                        signal.sentiment.score >= 45 ? "bg-warn" :
+                        signal.sentiment.score >= 30 ? "bg-sell/70" : "bg-sell"
+                      }`}
+                      style={{ width: `${signal.sentiment.score}%` }}
+                    />
+                  </div>
+                  <div className="flex justify-between mt-1 text-[9px] text-text-muted">
+                    <span>Strong Bearish</span>
+                    <span>Neutral</span>
+                    <span>Strong Bullish</span>
+                  </div>
+                </div>
+                {/* Breakdown */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5">
+                  {Array.isArray(signal.sentiment.breakdown) && signal.sentiment.breakdown.map((item, i) => (
+                    <div key={i} className="flex items-center justify-between rounded-lg border border-border bg-bg/50 px-3 py-2">
+                      <span className="text-[10px] text-text-muted">{item.factor}</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-mono text-text-bright">{item.value}</span>
+                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
+                          item.bias === "bullish" ? "bg-buy/15 text-buy" :
+                          item.bias === "bearish" ? "bg-sell/15 text-sell" :
+                          "bg-text-muted/10 text-text-muted"
+                        }`}>
+                          {item.bias === "bullish" ? "↑" : item.bias === "bearish" ? "↓" : "→"}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
@@ -450,6 +746,14 @@ export default function Dashboard() {
                     <span className="font-mono text-text-bright">{signal.currentPrice.toFixed(5)}</span>
                   </div>
                   <div className="flex justify-between text-xs">
+                    <span className="text-text-muted">Period High (30d)</span>
+                    <span className="font-mono text-buy">{signal.levels.periodHigh?.toFixed(5) ?? "—"}</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-text-muted">Period Low (30d)</span>
+                    <span className="font-mono text-sell">{signal.levels.periodLow?.toFixed(5) ?? "—"}</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
                     <span className="text-text-muted">Data Points</span>
                     <span className="font-mono text-text-bright">{signal.dataPoints}</span>
                   </div>
@@ -462,6 +766,10 @@ export default function Dashboard() {
                     <span className="font-mono text-text-bright">
                       {(signal.levels.resistance - signal.levels.support).toFixed(5)}
                     </span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-text-muted">ATR Volatility</span>
+                    <span className="font-mono text-warn">{signal.indicators.atr?.toFixed(5) ?? "—"}</span>
                   </div>
                 </div>
               </div>
