@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import {
   LayoutDashboard, Brain, BookOpen, Share2, Coins,
-  Activity, LogOut, RefreshCw,
+  Activity, LogOut, RefreshCw, HelpCircle,
 } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { href: "/dashboard/social", label: "Social", icon: Share2 },
   { href: "/dashboard/crypto", label: "Crypto", icon: Coins },
   { href: "/dashboard/live", label: "Live Charts", icon: Activity },
+  { href: "/dashboard/glossary", label: "Glossary", icon: HelpCircle },
 ];
 
 const MOTIVATIONS = [
